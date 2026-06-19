@@ -15,30 +15,30 @@ FIO_EXTRA_ARGS=()
 
 usage() {
   cat <<USAGE
-Uso:
-  $SCRIPT_NAME --target /ruta/montada [opciones]
+Usage:
+  $SCRIPT_NAME --target /path/to/mount [options]
 
-Ejemplos:
+Examples:
   $SCRIPT_NAME --target /mnt/ssd
   $SCRIPT_NAME --target /home --size 8G --runtime 120 --jobs 4
   $SCRIPT_NAME --target /mnt/ssd --info-only
 
-Opciones:
-  -t, --target DIR       Directorio o punto de montaje donde crear el archivo de prueba.
-      --device DEV       Disco fisico para informacion previa, por ejemplo /dev/nvme0n1 o /dev/sda.
-  -s, --size SIZE        Tamano del archivo de prueba de fio. Por defecto: $SIZE.
-  -r, --runtime SEC      Duracion de cada prueba en segundos. Por defecto: $RUNTIME.
-  -j, --jobs N           Numero de jobs de fio. Por defecto: $JOBS.
-  -d, --iodepth N        Profundidad de cola. Por defecto: $IODEPTH.
-      --report FILE      Archivo de informe. Por defecto: ./fio-report-YYYYmmdd-HHMMSS.log.
-      --keep-file        No borrar el archivo de prueba al terminar.
-      --info-only        Mostrar informacion del disco y TRIM/fstrim, sin ejecutar fio.
-  -h, --help             Mostrar esta ayuda.
+Options:
+  -t, --target DIR       Directory or mount point where the test file will be created.
+      --device DEV       Physical disk to show in the info section, for example /dev/nvme0n1 or /dev/sda.
+  -s, --size SIZE        fio test file size. Default: $SIZE.
+  -r, --runtime SEC      Duration of each test in seconds. Default: $RUNTIME.
+  -j, --jobs N           Number of fio jobs. Default: $JOBS.
+  -d, --iodepth N        Queue depth. Default: $IODEPTH.
+      --report FILE      Report file. Default: ./fio-report-YYYYmmdd-HHMMSS.log.
+      --keep-file        Do not delete the test file at the end.
+      --info-only        Show disk and TRIM/fstrim information only.
+  -h, --help             Show this help.
 
-Notas:
-  - El script usa un archivo llamado .fio-disk-check-testfile dentro del target.
-  - Las pruebas de escritura modifican ese archivo, no escriben sobre el bloque completo.
-  - Asegurate de que el target este en el disco que quieres probar y tenga espacio libre.
+Notes:
+  - The script uses a file named .fio-disk-check-testfile inside the target.
+  - Write tests modify that file; they do not write across the entire block device.
+  - Make sure the target is on the disk you actually want to test and that it has free space.
 USAGE
 }
 
@@ -66,37 +66,37 @@ parse_args() {
     case "$1" in
       -t|--target)
         TARGET="${2:-}"
-        [[ -n "$TARGET" ]] || die "falta valor para $1"
+        [[ -n "$TARGET" ]] || die "missing value for $1"
         shift 2
         ;;
       --device)
         DEVICE_OVERRIDE="${2:-}"
-        [[ -n "$DEVICE_OVERRIDE" ]] || die "falta valor para $1"
+        [[ -n "$DEVICE_OVERRIDE" ]] || die "missing value for $1"
         shift 2
         ;;
       -s|--size)
         SIZE="${2:-}"
-        [[ -n "$SIZE" ]] || die "falta valor para $1"
+        [[ -n "$SIZE" ]] || die "missing value for $1"
         shift 2
         ;;
       -r|--runtime)
         RUNTIME="${2:-}"
-        [[ -n "$RUNTIME" ]] || die "falta valor para $1"
+        [[ -n "$RUNTIME" ]] || die "missing value for $1"
         shift 2
         ;;
       -j|--jobs)
         JOBS="${2:-}"
-        [[ -n "$JOBS" ]] || die "falta valor para $1"
+        [[ -n "$JOBS" ]] || die "missing value for $1"
         shift 2
         ;;
       -d|--iodepth)
         IODEPTH="${2:-}"
-        [[ -n "$IODEPTH" ]] || die "falta valor para $1"
+        [[ -n "$IODEPTH" ]] || die "missing value for $1"
         shift 2
         ;;
       --report)
         REPORT_FILE="${2:-}"
-        [[ -n "$REPORT_FILE" ]] || die "falta valor para $1"
+        [[ -n "$REPORT_FILE" ]] || die "missing value for $1"
         shift 2
         ;;
       --keep-file)
@@ -117,16 +117,16 @@ parse_args() {
         break
         ;;
       *)
-        die "opcion desconocida: $1"
+        die "unknown option: $1"
         ;;
     esac
   done
 }
 
 require_target() {
-  [[ -n "$TARGET" ]] || die "debes indicar --target /ruta/montada"
-  [[ -d "$TARGET" ]] || die "el target no existe o no es un directorio: $TARGET"
-  [[ -w "$TARGET" || "$INFO_ONLY" -eq 1 ]] || die "no hay permiso de escritura en: $TARGET"
+  [[ -n "$TARGET" ]] || die "you must provide --target /path/to/mount"
+  [[ -d "$TARGET" ]] || die "the target does not exist or is not a directory: $TARGET"
+  [[ -w "$TARGET" || "$INFO_ONLY" -eq 1 ]] || die "no write permission on: $TARGET"
 }
 
 resolve_device() {
@@ -189,13 +189,13 @@ init_report() {
 
   {
     printf '# fio disk check report\n'
-    printf 'Fecha: %s\n' "$(date --iso-8601=seconds 2>/dev/null || date)"
+    printf 'Date: %s\n' "$(date --iso-8601=seconds 2>/dev/null || date)"
     printf 'Host: <redacted>\n'
     printf 'Target: <redacted>\n'
-    printf 'Disco: <redacted>\n'
-    printf 'Archivo de prueba: <TARGET>/.fio-disk-check-testfile\n'
-    printf 'Tamano fio: %s\n' "$SIZE"
-    printf 'Runtime por prueba: %ss\n' "$RUNTIME"
+    printf 'Disk: <redacted>\n'
+    printf 'Test file: <TARGET>/.fio-disk-check-testfile\n'
+    printf 'fio size: %s\n' "$SIZE"
+    printf 'Runtime per test: %ss\n' "$RUNTIME"
     printf 'Jobs: %s\n' "$JOBS"
     printf 'Iodepth: %s\n' "$IODEPTH"
     printf '\n'
@@ -222,17 +222,17 @@ format_command() {
 print_basic_info() {
   print_section "Target"
   printf 'Target:      %s\n' "$TARGET"
-  printf 'Montaje:     %s\n' "${MOUNTPOINT:-desconocido}"
-  printf 'Fuente:      %s\n' "${PARTITION:-desconocida}"
-  printf 'Disco:       %s\n' "${DISK:-desconocido}"
-  printf 'Filesystem:  %s\n' "${FSTYPE:-desconocido}"
-  printf 'Opciones:    %s\n' "${MOUNT_OPTIONS:-desconocidas}"
+  printf 'Mountpoint:  %s\n' "${MOUNTPOINT:-unknown}"
+  printf 'Source:      %s\n' "${PARTITION:-unknown}"
+  printf 'Disk:        %s\n' "${DISK:-unknown}"
+  printf 'Filesystem:  %s\n' "${FSTYPE:-unknown}"
+  printf 'Options:     %s\n' "${MOUNT_OPTIONS:-unknown}"
 
   print_section "lsblk"
   if [[ "$DISK" == /dev/* ]] && lsblk "$DISK" >/dev/null 2>&1; then
     lsblk -o NAME,PATH,TYPE,SIZE,MODEL,SERIAL,ROTA,TRAN,FSTYPE,MOUNTPOINTS,DISC-MAX,DISC-GRAN "$DISK"
   else
-    printf 'No se pudo limitar lsblk a "%s"; se muestra la lista completa.\n' "$DISK"
+    printf 'Could not limit lsblk to "%s"; showing the full list.\n' "$DISK"
     lsblk -o NAME,PATH,TYPE,SIZE,MODEL,ROTA,TRAN,FSTYPE,MOUNTPOINTS,DISC-MAX,DISC-GRAN
   fi
 }
@@ -243,16 +243,16 @@ print_transport_info() {
   root_prefix="$(as_root_prefix)"
 
   if [[ "$DISK" == /dev/* ]] && ! lsblk "$DISK" >/dev/null 2>&1; then
-    print_section "Informacion del dispositivo"
-    printf 'No se pudo consultar "%s" como dispositivo de bloque.\n' "$DISK"
-    printf 'Si el target esta sobre LUKS/LVM, revisa el arbol completo de lsblk mostrado arriba para identificar el SATA/NVMe fisico.\n'
+    print_section "Device info"
+    printf 'Could not query "%s" as a block device.\n' "$DISK"
+    printf 'If the target is on LUKS/LVM, check the full lsblk tree above to identify the physical SATA/NVMe disk.\n'
     return 0
   fi
 
   transport="$(lsblk -dn -o TRAN "$DISK" 2>/dev/null | tr -d ' ' || true)"
 
-  print_section "Informacion del dispositivo"
-  printf 'Transporte detectado: %s\n' "${transport:-desconocido}"
+  print_section "Device info"
+  printf 'Detected transport: %s\n' "${transport:-unknown}"
 
   if [[ "$base" == nvme* ]] && have nvme; then
     printf '\n-- nvme id-ctrl --\n'
@@ -268,11 +268,11 @@ print_transport_info() {
     printf '\n-- smartctl -i -A --\n'
     ${root_prefix}smartctl -i -A "$DISK" 2>/dev/null || true
   else
-    printf '\nsmartctl no esta instalado. En Debian/Ubuntu: sudo apt install smartmontools\n'
+    printf '\nsmartctl is not installed. On Debian/Ubuntu: sudo apt install smartmontools\n'
   fi
 
   if [[ "$base" == nvme* ]] && ! have nvme; then
-    printf 'nvme-cli no esta instalado. En Debian/Ubuntu: sudo apt install nvme-cli\n'
+    printf 'nvme-cli is not installed. On Debian/Ubuntu: sudo apt install nvme-cli\n'
   fi
 }
 
@@ -282,20 +282,20 @@ print_trim_info() {
 
   print_section "TRIM / fstrim"
   if [[ "$DISK" == /dev/* ]] && ! lsblk "$DISK" >/dev/null 2>&1; then
-    printf 'Soporte TRIM/discard del disco: no se pudo comprobar para "%s".\n' "$DISK"
+    printf 'Disk TRIM/discard support: could not be checked for "%s".\n' "$DISK"
   else
     disc_max="$(lsblk -dn -o DISC-MAX "$DISK" 2>/dev/null | tr -d ' ' || true)"
     if [[ -n "$disc_max" && "$disc_max" != "0B" && "$disc_max" != "0" ]]; then
-      printf 'Soporte TRIM/discard del disco: si (DISC-MAX=%s)\n' "$disc_max"
+      printf 'Disk TRIM/discard support: yes (DISC-MAX=%s)\n' "$disc_max"
     else
-      printf 'Soporte TRIM/discard del disco: no detectado o no expuesto (DISC-MAX=%s)\n' "${disc_max:-desconocido}"
+      printf 'Disk TRIM/discard support: not detected or not exposed (DISC-MAX=%s)\n' "${disc_max:-unknown}"
     fi
   fi
 
   if [[ ",$MOUNT_OPTIONS," == *",discard,"* ]]; then
-    printf 'Discard online en el montaje: activado\n'
+    printf 'Online discard on mount: enabled\n'
   else
-    printf 'Discard online en el montaje: no activado\n'
+    printf 'Online discard on mount: not enabled\n'
   fi
 
   if have systemctl; then
@@ -303,25 +303,25 @@ print_trim_info() {
     printf 'fstrim.timer: %s\n' "${fstrim_state:-no detectado}"
     systemctl list-timers fstrim.timer --no-pager 2>/dev/null || true
   else
-    printf 'systemctl no esta disponible; no se puede revisar fstrim.timer.\n'
+    printf 'systemctl is not available; cannot check fstrim.timer.\n'
   fi
 
-  printf '\nPasos rapidos si fstrim.timer no esta activado:\n'
+  printf '\nQuick steps if fstrim.timer is not enabled:\n'
   printf '  1. %ssystemctl enable --now fstrim.timer\n' "$root_prefix"
   printf '  2. systemctl status fstrim.timer\n'
   printf '  3. %sfstrim -av\n' "$root_prefix"
-  printf '\nAlternativa: usar opcion discard en /etc/fstab, aunque normalmente se prefiere fstrim.timer periodico.\n'
+  printf '\nAlternative: use the discard option in /etc/fstab, although a periodic fstrim.timer is usually preferred.\n'
 }
 
 check_fio() {
-  have fio || die "fio no esta instalado. En Debian/Ubuntu: sudo apt install fio"
+  have fio || die "fio is not installed. On Debian/Ubuntu: sudo apt install fio"
 }
 
 print_space_warning() {
-  print_section "Espacio disponible"
+  print_section "Available space"
   df -h "$TARGET"
-  printf '\nArchivo de prueba: %s/.fio-disk-check-testfile\n' "$TARGET"
-  printf 'Tamano configurado: %s\n' "$SIZE"
+  printf '\nTest file: %s/.fio-disk-check-testfile\n' "$TARGET"
+  printf 'Configured size: %s\n' "$SIZE"
 }
 
 run_fio_test() {
@@ -355,16 +355,16 @@ run_fio_test() {
     "${FIO_EXTRA_ARGS[@]}"
   )
 
-  printf 'Comando:\n  '
+  printf 'Command:\n  '
   format_command "${cmd[@]}"
 
-  append_report_section "Prueba: $name"
+  append_report_section "Test: $name"
   {
-    printf 'Explicacion:\n'
+    printf 'Explanation:\n'
     explain_fio_test "$name" "$rw" "$bs" "${extra[@]}"
-    printf '\nComando:\n'
+    printf '\nCommand:\n'
     format_command "${cmd[@]}"
-    printf '\nSalida completa de fio:\n'
+    printf '\nFull fio output:\n'
   } | sanitize_report_stream >>"$REPORT_FILE"
 
   if "${cmd[@]}" >"$output_file" 2>&1; then
@@ -374,13 +374,13 @@ run_fio_test() {
   fi
 
   sanitize_report_stream <"$output_file" >>"$REPORT_FILE"
-  printf '\nCodigo de salida: %s\n' "$status" >>"$REPORT_FILE"
+  printf '\nExit code: %s\n' "$status" >>"$REPORT_FILE"
 
   print_fio_summary "$output_file"
   rm -f "$output_file"
 
   if [[ "$status" -ne 0 ]]; then
-    die "fio fallo en la prueba $name. Revisa el informe: $REPORT_FILE"
+    die "fio failed in test $name. Check the report: $REPORT_FILE"
   fi
 }
 
@@ -394,42 +394,42 @@ explain_fio_test() {
 
   case "$rw" in
     write)
-      operation="escritura secuencial"
-      description="Escribe datos de forma continua para medir rendimiento sostenido de escritura."
+      operation="sequential write"
+      description="Writes data continuously to measure sustained write performance."
       ;;
     read)
-      operation="lectura secuencial"
-      description="Lee datos de forma continua para medir rendimiento sostenido de lectura."
+      operation="sequential read"
+      description="Reads data continuously to measure sustained read performance."
       ;;
     randwrite)
-      operation="escritura aleatoria"
-      description="Escribe bloques en posiciones aleatorias para medir IOPS y latencia de escritura."
+      operation="random write"
+      description="Writes blocks at random offsets to measure write IOPS and latency."
       ;;
     randread)
-      operation="lectura aleatoria"
-      description="Lee bloques en posiciones aleatorias para medir IOPS y latencia de lectura."
+      operation="random read"
+      description="Reads blocks at random offsets to measure read IOPS and latency."
       ;;
     randrw)
-      operation="lectura/escritura aleatoria"
-      description="Mezcla lecturas y escrituras aleatorias para simular carga mixta."
+      operation="mixed random read/write"
+      description="Mixes random reads and writes to simulate mixed workload."
       ;;
     *)
       operation="$rw"
-      description="Prueba fio personalizada."
+      description="Custom fio test."
       ;;
   esac
 
-  printf 'Tipo de prueba: %s (%s)\n' "$name" "$operation"
-  printf 'Descripcion: %s\n' "$description"
-  printf 'Archivo de prueba: %s/.fio-disk-check-testfile\n' "$TARGET"
-  printf 'Tamano del archivo/dataset: %s\n' "$SIZE"
-  printf 'Tamano de bloque: %s\n' "$bs"
-  printf 'Duracion: %ss + 5s de calentamiento\n' "$RUNTIME"
+  printf 'Test type: %s (%s)\n' "$name" "$operation"
+  printf 'Description: %s\n' "$description"
+  printf 'Test file: %s/.fio-disk-check-testfile\n' "$TARGET"
+  printf 'File/dataset size: %s\n' "$SIZE"
+  printf 'Block size: %s\n' "$bs"
+  printf 'Duration: %ss + 5s warm-up\n' "$RUNTIME"
   printf 'Jobs: %s\n' "$JOBS"
   printf 'Iodepth: %s\n' "$IODEPTH"
-  printf 'I/O directa: si (--direct=1)\n'
+  printf 'Direct I/O: yes (--direct=1)\n'
   if [[ -n "$mix" ]]; then
-    printf 'Mezcla lectura/escritura: %s%% lectura, %s%% escritura\n' "$mix" "$((100 - mix))"
+    printf 'Read/write mix: %s%% read, %s%% write\n' "$mix" "$((100 - mix))"
   fi
 }
 
@@ -437,7 +437,7 @@ print_fio_summary() {
   local output_file
   output_file="$1"
 
-  printf '\nResumen:\n'
+  printf '\nSummary:\n'
   awk '
     /^[[:space:]]*(read|write):/ {
       gsub(/^[[:space:]]+/, "")
@@ -456,7 +456,7 @@ print_fio_summary() {
       print "  " $0
     }
   ' "$output_file"
-  printf 'Salida completa guardada en: %s\n' "$REPORT_FILE"
+  printf 'Full output saved in: %s\n' "$REPORT_FILE"
 }
 
 cleanup() {
@@ -480,11 +480,11 @@ main() {
 
   check_fio
   init_report
-  printf '\nInforme: %s\n' "$REPORT_FILE"
+  printf '\nReport: %s\n' "$REPORT_FILE"
   print_space_warning
 
-  printf '\nSe ejecutaran pruebas de escritura y lectura sobre un archivo dentro del target.\n'
-  printf 'Pulsa Ctrl+C ahora si el target no es correcto.\n\n'
+  printf '\nWrite and read tests will be run against a file inside the target.\n'
+  printf 'Press Ctrl+C now if the target is not correct.\n\n'
   sleep 5
 
   trap cleanup EXIT
@@ -494,13 +494,13 @@ main() {
   run_fio_test "rand_read_4k" "randread" "4k"
   run_fio_test "rand_rw_4k_70read" "randrw" "4k" --rwmixread=70
 
-  print_section "Finalizado"
+  print_section "Done"
   if [[ "$KEEP_FILE" -eq 1 ]]; then
-    printf 'Se conserva el archivo de prueba: %s/.fio-disk-check-testfile\n' "$TARGET"
+    printf 'The test file will be kept: %s/.fio-disk-check-testfile\n' "$TARGET"
   else
-    printf 'El archivo de prueba se eliminara automaticamente.\n'
+    printf 'The test file will be removed automatically.\n'
   fi
-  printf 'Informe completo: %s\n' "$REPORT_FILE"
+  printf 'Full report: %s\n' "$REPORT_FILE"
 }
 
 main "$@"
