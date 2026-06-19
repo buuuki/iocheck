@@ -16,7 +16,7 @@ FIO_EXTRA_ARGS=()
 usage() {
   cat <<USAGE
 Usage:
-  $SCRIPT_NAME --target /path/to/mount [options]
+  $SCRIPT_NAME --target /existing/mount/or/dir [options]
 
 Examples:
   $SCRIPT_NAME --target /mnt/ssd
@@ -24,7 +24,7 @@ Examples:
   $SCRIPT_NAME --target /mnt/ssd --info-only
 
 Options:
-  -t, --target DIR       Directory or mount point where the test file will be created.
+  -t, --target DIR       Existing directory or mount point on the disk to test.
       --device DEV       Physical disk to show in the info section, for example /dev/nvme0n1 or /dev/sda.
   -s, --size SIZE        fio test file size. Default: $SIZE.
   -r, --runtime SEC      Duration of each test in seconds. Default: $RUNTIME.
@@ -124,7 +124,7 @@ parse_args() {
 }
 
 require_target() {
-  [[ -n "$TARGET" ]] || die "you must provide --target /path/to/mount"
+  [[ -n "$TARGET" ]] || die "you must provide --target /existing/mount/or/dir"
   [[ -d "$TARGET" ]] || die "the target does not exist or is not a directory: $TARGET"
   [[ -w "$TARGET" || "$INFO_ONLY" -eq 1 ]] || die "no write permission on: $TARGET"
 }

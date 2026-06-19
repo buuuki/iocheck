@@ -1,6 +1,6 @@
 # iocheck
 
-`iocheck.sh` runs read and write tests with `fio` against a file inside a chosen mount point. It collects disk information first, checks TRIM/fstrim state, and then runs a small benchmark suite while keeping the full output in a report file.
+`iocheck.sh` runs read and write tests with `fio` against a file inside an existing directory or mount point on the disk you want to test. It collects disk information first, checks TRIM/fstrim state, and then runs a small benchmark suite while keeping the full output in a report file.
 
 ## What it does
 
@@ -26,7 +26,7 @@ sudo apt install fio smartmontools nvme-cli hdparm
 ## Usage
 
 ```bash
-./iocheck.sh --target /path/to/mount
+./iocheck.sh --target /mnt/ssd
 ```
 
 Examples:
@@ -40,7 +40,7 @@ Examples:
 
 ## Options
 
-- `-t, --target DIR`: directory or mount point where the test file will be created.
+- `-t, --target DIR`: existing directory or mount point on the disk to test.
 - `--device DEV`: force the physical disk shown in the info section, for example `/dev/nvme0n1` or `/dev/sda`.
 - `-s, --size SIZE`: `fio` test file size. Default: `4G`.
 - `-r, --runtime SEC`: duration of each test in seconds. Default: `60`.
